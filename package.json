@@ -1,0 +1,25 @@
+{
+  "name": "whatsgpt",
+  "version": "1.0.0",
+  "description": "A WhatsApp chatbot integrated with OpenAI's ChatGPT API",
+  "main": "index.js",
+  "scripts": {
+    "test": "test"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/dannysantino/whatsgpt.git"
+  },
+  "keywords": [
+    "bot",
+    "whatsapp",
+    "chatgpt",
+    "openai"
+  ],
+  "author": "Danny Santino",
+  "license": "MIT",
+  "bugs": {
+    "url": "https://github.com/dannysantino/whatsgpt/issues"
+  },
+  "homepage": "https://github.com/dannysantino/whatsgpt#readme"
+}
