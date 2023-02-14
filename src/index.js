@@ -27,7 +27,7 @@ const sendMessage = async message => {
         conversationId = response.conversationId;
         parentMessageId = response.parentMessageId;
 
-        console.log("ChatGPT reply received: ", response.text);
+        console.log("ChatGPT reply received");
         
         return response;
     } catch (err) {
@@ -43,7 +43,7 @@ mongoose.connect(process.env.DB_URL)
                 store,
                 backupSyncIntervalMs: 300000
             })
-        })
+        });
 
         whatsapp.on("remote_session_saved", () => console.log("Session saved"));
 
@@ -61,11 +61,14 @@ mongoose.connect(process.env.DB_URL)
                         message.reply(reply.text)
                     })
                     .catch(e => {
-                        console.log("Error: ", e.cause);
+                        console.error("Error message: ", e.cause);
                         message.reply("An error was encountered. Please try again in a moment.");
-                    })
+                    });
             }
-        })
+        });
 
         whatsapp.initialize();
     })
+    .catch(e => {
+        console.error("Failed to connect to DB: ", e);
+    });
