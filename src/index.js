@@ -2,36 +2,56 @@ import * as dotenv from "dotenv"
 dotenv.config();
 
 import whatsappweb from "whatsapp-web.js";
-import { MongoStore } from "wwebjs-mongo";
-import mongoose from "mongoose";
 import qrcode from "qrcode-terminal"
-
+import mongoose from "mongoose";
+import { MongoStore } from "wwebjs-mongo";
 import { ChatGPTAPI } from "chatgpt";
+
+import Context from "./models/Context.js";
 
 const { Client, RemoteAuth } = whatsappweb;
 
-const api = new ChatGPTAPI({ apiKey: process.env.API_KEY});
 
-let conversationId,
-    parentMessageId;
+const api = new ChatGPTAPI({ apiKey: process.env.API_KEY});
     
 const sendMessage = async message => {
+    let response;
+
     try {
-        console.log(`Message received from: ${message.from}`);
-
-        const response = await api.sendMessage(message.body, conversationId && {
-            conversationId,
-            parentMessageId
-        });
+        const doc = await Context.findOne();
         
-        conversationId = response.conversationId;
-        parentMessageId = response.parentMessageId;
+        if (doc) {
+            const { conversationId, parentMessageId } = doc;
 
-        console.log("ChatGPT reply received");
-        
+            response = await api.sendMessage(message.body, {
+                conversationId,
+                parentMessageId
+            });
+
+            await Context.findOneAndUpdate(
+                { _id: doc._id },
+                {
+                    conversationId,
+                    parentMessageId
+                }
+            );
+
+            console.log("Conversation context updated");
+        } else {
+            response = await api.sendMessage(message.body);
+            
+            const context = new Context({
+                conversationId: response.conversationId,
+                parentMessageId: response.parentMessageId
+            });
+
+            await context.save();
+        }
+
         return response;
+        
     } catch (err) {
-        throw new Error("Message Error", { cause: err });
+        throw new Error("Error Message: ", { cause: err });
     }
 }
 
@@ -55,13 +75,15 @@ mongoose.connect(process.env.DB_URL)
             if (message.hasMedia) {
                 message.reply("Sorry, media files cannot be handled at this time. Please, send a text-only message.");
             } else {
+                console.log(`Message received from: ${message.from}`);
+
                 sendMessage(message)
                     .then(reply => {
-                        console.log(reply.text);
+                        console.log("ChatGPT reply received");
                         message.reply(reply.text)
                     })
                     .catch(e => {
-                        console.error("Error message: ", e.cause);
+                        console.error(e.message, e.cause);
                         message.reply("An error was encountered. Please try again in a moment.");
                     });
             }
