@@ -1,11 +1,7 @@
 import mongoose from "mongoose";
 
 const contextSchema = new mongoose.Schema({
-    conversationId: {
-        type: String,
-        required: true
-    },
-    parentMessageId: {
+    contextId: {
         type: String,
         required: true
     }
