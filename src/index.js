@@ -11,9 +11,8 @@ import Context from "./models/Context.js";
 
 const { Client, RemoteAuth } = whatsappweb;
 
+const api = new ChatGPTAPI({ apiKey: process.env.API_KEY });
 
-const api = new ChatGPTAPI({ apiKey: process.env.API_KEY});
-    
 const sendMessage = async message => {
     let response;
 
@@ -21,28 +20,23 @@ const sendMessage = async message => {
         const doc = await Context.findOne();
         
         if (doc) {
-            const { conversationId, parentMessageId } = doc;
+            const { contextId } = doc;
 
-            response = await api.sendMessage(message.body, {
-                conversationId,
-                parentMessageId
+            response = await api.sendMessage(message, {
+                parentMessageId: contextId
             });
 
             await Context.findOneAndUpdate(
                 { _id: doc._id },
-                {
-                    conversationId,
-                    parentMessageId
-                }
+                { contextId: response.id }
             );
 
             console.log("Conversation context updated");
         } else {
-            response = await api.sendMessage(message.body);
+            response = await api.sendMessage(message);
             
             const context = new Context({
-                conversationId: response.conversationId,
-                parentMessageId: response.parentMessageId
+                contextId: response.id
             });
 
             await context.save();
@@ -77,10 +71,10 @@ mongoose.connect(process.env.DB_URL)
             } else {
                 console.log(`Message received from: ${message.from}`);
 
-                sendMessage(message)
+                sendMessage(message.body)
                     .then(reply => {
                         console.log("ChatGPT reply received");
-                        message.reply(reply.text)
+                        message.reply(reply.text);
                     })
                     .catch(e => {
                         console.error(e.message, e.cause);
